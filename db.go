@@ -58,11 +58,8 @@ func (db *DB) KNN (
 
 	db.RLock(); defer db.RUnlock()
 
-	res := make([]rtree.BoxObj, 0)
 	if len(predicates) > 0 {
-		res = db.tree.KNN(query, limit, score, predicates[0])
-	} else {
-		res = db.tree.KNN(query, limit, score)
+	 	return db.tree.KNN(query, limit, score, predicates[0])
 	}
-	return res
+	return db.tree.KNN(query, limit, score)
 }
