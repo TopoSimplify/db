@@ -35,10 +35,12 @@ func (db *DB) KNN(
     predicates ...func(*rtree.KObj) (bool, bool)) []rtree.BoxObj {
 
     db.RLock()
+    var o []rtree.BoxObj
     if len(predicates) > 0 {
-        return db.tree.KNN(query, limit, score, predicates[0])
+        o = db.tree.KNN(query, limit, score, predicates[0])
+    } else {
+        o = db.tree.KNN(query, limit, score)
     }
-    o := db.tree.KNN(query, limit, score)
     db.RUnlock()
     return o
 }
