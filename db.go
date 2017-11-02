@@ -1,17 +1,5 @@
 package db
 
-import (
-    "github.com/intdxdt/rtree"
-)
-
-type DB struct {
-    *rtree.RTree
-}
-
-func NewDB(nodeCapacity int) *DB {
-    return &DB{rtree.NewRTree(nodeCapacity)}
-}
-
 //
 //type DB struct {
 //    sync.RWMutex
