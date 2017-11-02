@@ -1,4 +1,4 @@
-package db
+package x_db
 
 //
 //type DB struct {
