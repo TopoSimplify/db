@@ -11,6 +11,8 @@ import (
 	"github.com/intdxdt/random"
 )
 
+const nodeTblColumns = "gob, geom"
+
 //DBNode
 type DBNode struct {
 	Id       string
@@ -18,11 +20,9 @@ type DBNode struct {
 	Pln      []*geom.Point
 	Range    [2]int
 	WTK      string
-	Instance string
 }
 
-
-func  CreateNodeTable(db *DB, srid int) error {
+func CreateNodeTable(db *DB) error {
 	if db.nodeTbl == "" {
 		db.nodeTbl = random.String(10)
 	}
@@ -33,11 +33,10 @@ func  CreateNodeTable(db *DB, srid int) error {
 		    geom GEOMETRY(Geometry, %v),
 		    CONSTRAINT pid_%v PRIMARY KEY (id)
 		)  WITH (OIDS=FALSE);
-	`, db.nodeTbl, srid, db.nodeTbl)
+	`, db.nodeTbl, db.srs, db.nodeTbl)
 	_, err := db.Exec(hullSQL)
 	return err
 }
-
 
 func NewDBNode(node *node.Node) *DBNode {
 	return &DBNode{
@@ -46,8 +45,19 @@ func NewDBNode(node *node.Node) *DBNode {
 		Pln:      node.Polyline.Coordinates,
 		Range:    node.Range.AsArray(),
 		WTK:      node.Geom.WKT(),
-		Instance: node.Instance.Id(),
 	}
+}
+
+func BulkLoadNodes(database *DB, nodes []*node.Node) error {
+	var vals = make([][]string, 0)
+	for _, h := range nodes {
+		vals = append(vals, []string{
+			fmt.Sprintf("'%v'", Serialize(NewDBNode(h))),
+			fmt.Sprintf(`ST_GeomFromText('%v', %v)`, h.Geom.WKT(), database.srs),
+		})
+	}
+	_, err := database.Exec(SQLInsertIntoTable(database.nodeTbl, nodeTblColumns, vals))
+	return err
 }
 
 // go binary encoder

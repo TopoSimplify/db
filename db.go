@@ -16,7 +16,7 @@ type DB struct {
 	srs      int
 }
 
-func NewDB(cfgToml string) *DB {
+func NewDB(cfgToml string, srs int ) *DB {
 	cfg := ReadConfig(cfgToml)
 	return &DB{Cfg: cfg}
 }
