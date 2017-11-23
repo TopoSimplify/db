@@ -9,6 +9,8 @@ import (
 	"encoding/base64"
 	"github.com/intdxdt/geom"
 	"github.com/intdxdt/random"
+	"simplex/pln"
+	"simplex/rng"
 )
 
 const nodeTblColumns = "gob, geom"
@@ -22,19 +24,22 @@ type DBNode struct {
 	WTK      string
 }
 
-func CreateNodeTable(db *DB) error {
-	if db.nodeTbl == "" {
-		db.nodeTbl = random.String(10)
-	}
-	var hullSQL = fmt.Sprintf(`
+func CreateNodeTable(src *DataSrc) error {
+	var err error
+	if src.NodeTable == "" {
+		src.NodeTable = random.String(10)
+		var hullSQL = fmt.Sprintf(`
 		CREATE TABLE IF NOT EXISTS %v (
 		    id SERIAL NOT NULL,
 		    gob TEXT NOT NULL,
-		    geom GEOMETRY(Geometry, %v),
+		    geom GEOMETRY(Geometry, %v) NOT NULL,
+		    status int DEFAULT 0,
 		    CONSTRAINT pid_%v PRIMARY KEY (id)
-		)  WITH (OIDS=FALSE);
-	`, db.nodeTbl, db.srs, db.nodeTbl)
-	_, err := db.Exec(hullSQL)
+		) WITH (OIDS=FALSE);
+		CREATE INDEX %v_gidx ON %v USING GIST (geom);
+	`, src.NodeTable, src.SRID, src.NodeTable, src.NodeTable, src.NodeTable)
+		_, err = src.Exec(hullSQL)
+	}
 	return err
 }
 
@@ -48,15 +53,32 @@ func NewDBNode(node *node.Node) *DBNode {
 	}
 }
 
-func BulkLoadNodes(database *DB, nodes []*node.Node) error {
+func NewNodeFromDB(ndb *DBNode) *node.Node {
+	var n = &node.Node{
+		Polyline: pln.New(ndb.Pln),
+		Range:    rng.NewRange(ndb.Range[0], ndb.Range[1]),
+		Geom:     geom.NewGeometry(ndb.WTK),
+	}
+	n.SetId(ndb.Id)
+	return n
+	//return &DBNode{
+	//	Id:       node.Id(),
+	//	HullType: node.Geom.Type().Value(),
+	//	Pln:      node.Polyline.Coordinates,
+	//	Range:    node.Range.AsArray(),
+	//	WTK:      node.Geom.WKT(),
+	//}
+}
+
+func BulkLoadNodes(src *DataSrc, nodes []*node.Node) error {
 	var vals = make([][]string, 0)
 	for _, h := range nodes {
 		vals = append(vals, []string{
-			fmt.Sprintf("'%v'", Serialize(NewDBNode(h))),
-			fmt.Sprintf(`ST_GeomFromText('%v', %v)`, h.Geom.WKT(), database.srs),
+			fmt.Sprintf(`'%v'`, Serialize(NewDBNode(h))),
+			fmt.Sprintf(`ST_GeomFromText('%v', %v)`, h.Geom.WKT(), src.SRID),
 		})
 	}
-	_, err := database.Exec(SQLInsertIntoTable(database.nodeTbl, nodeTblColumns, vals))
+	_, err := src.Exec(SQLInsertIntoTable(src.NodeTable, nodeTblColumns, vals))
 	return err
 }
 

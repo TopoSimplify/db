@@ -6,15 +6,18 @@ import (
 )
 
 type Config struct {
-	Host     string
-	Password string
-	Database string
-	User string
+	Host           string `toml:"host"`
+	Password       string `toml:"password"`
+	Database       string `toml:"database"`
+	User           string `toml:"user"`
+	Table          string `toml:"table"`
+	GeometryColumn string `toml:"geometrycolumn"`
+	SRID           int    `toml:"srid"`
 }
 
-func ReadConfig(fname string) Config {
+func NewConfig(fileName string) Config {
 	var cfg Config
-	var txt, err = fileutil.ReadAllOfFile(fname)
+	var txt, err = fileutil.ReadAllOfFile(fileName)
 	if err != nil {
 		panic(err)
 	}
