@@ -78,6 +78,42 @@ func (n *Node) SegmentPoints() (*geom.Point, *geom.Point) {
 	return n.First(), n.Last()
 }
 
+//Is node collapsible with respect to other
+//self and other should be contiguous
+func (n *Node) Collapsible(other *Node) bool {
+	//segments are already collapsed
+	if n.Range.Size() == 1 {
+		return true
+	}
+	//or hull can be a linear for
+	//colinear boundaries where self.range.size > 1
+	if 	_, ok := n.Geometry().(*geom.LineString); ok {
+		return true
+	}
+
+	var ai, aj = n.SegmentPoints()
+	var bi, bj = other.SegmentPoints()
+
+	var c *geom.Point
+	if ai.Equals2D(bi) || aj.Equals2D(bi) {
+		c = bi
+	} else if ai.Equals2D(bj) || aj.Equals2D(bj) {
+		c = bj
+	} else {
+		return true
+	}
+
+	var t = bj
+	if c.Equals2D(t) {
+		t = bi
+	}
+	if ply, ok := n.Geometry().(*geom.Polygon); ok {
+		return !ply.Shell.PointCompletelyInRing(t)
+	}
+	panic("unimplemented : hull type is handled")
+}
+
+
 func NewDBNode(node *node.Node) *Node {
 	return &Node{
 		Id:          node.Id(),
