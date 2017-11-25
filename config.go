@@ -12,6 +12,7 @@ type Config struct {
 	User           string `toml:"user"`
 	Table          string `toml:"table"`
 	GeometryColumn string `toml:"geometrycolumn"`
+	IdColumn       string `toml:"idcolumn"`
 	SRID           int    `toml:"srid"`
 }
 

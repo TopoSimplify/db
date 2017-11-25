@@ -1,112 +1,99 @@
 package db
 
 import (
-	"log"
-	"fmt"
-	"bytes"
-	"encoding/gob"
 	"simplex/node"
-	"encoding/base64"
 	"github.com/intdxdt/geom"
-	"github.com/intdxdt/random"
 	"simplex/pln"
 	"simplex/rng"
+	"simplex/seg"
+	"github.com/intdxdt/mbr"
 )
 
-const nodeTblColumns = "gob, geom"
+const nodeTblColumns = "fid, gob, geom"
 
-//DBNode
-type DBNode struct {
-	Id       string
-	HullType int
-	Pln      []*geom.Point
-	Range    [2]int
-	WTK      string
+//Node
+type Node struct {
+	Id          string
+	FID         int
+	NID         int
+	Part        int
+	Coordinates []*geom.Point
+	Range       *rng.Range
+	HullType    int
+	WTK         string
+	geom        geom.Geometry
+	polyline    *pln.Polyline
 }
 
-func CreateNodeTable(src *DataSrc) error {
-	var err error
-	if src.NodeTable == "" {
-		src.NodeTable = random.String(10)
-		var hullSQL = fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %v (
-		    id SERIAL NOT NULL,
-		    gob TEXT NOT NULL,
-		    geom GEOMETRY(Geometry, %v) NOT NULL,
-		    status int DEFAULT 0,
-		    CONSTRAINT pid_%v PRIMARY KEY (id)
-		) WITH (OIDS=FALSE);
-		CREATE INDEX %v_gidx ON %v USING GIST (geom);
-	`, src.NodeTable, src.SRID, src.NodeTable, src.NodeTable, src.NodeTable)
-		_, err = src.Exec(hullSQL)
+func (n *Node) Geometry() geom.Geometry {
+	if n.geom != nil {
+		return n.geom
 	}
-	return err
+	n.geom = geom.NewGeometry(n.WTK)
+	return n.geom
 }
 
-func NewDBNode(node *node.Node) *DBNode {
-	return &DBNode{
-		Id:       node.Id(),
-		HullType: node.Geom.Type().Value(),
-		Pln:      node.Polyline.Coordinates,
-		Range:    node.Range.AsArray(),
-		WTK:      node.Geom.WKT(),
+func (n *Node) Polyline() *pln.Polyline {
+	if n.polyline != nil {
+		return n.polyline
+	}
+	n.polyline = pln.New(n.Coordinates)
+	return n.polyline
+}
+
+//Implements bbox interface
+func (n *Node) BBox() *mbr.MBR {
+	return n.Geometry().BBox()
+}
+
+//stringer interface
+func (n *Node) String() string {
+	return n.Geometry().WKT()
+}
+
+//first point in coordinates
+func (n *Node) First() *geom.Point {
+	return n.Coordinates[0]
+}
+
+//last point in coordinates
+func (n *Node) Last() *geom.Point {
+	return n.Coordinates[len(n.Coordinates)-1]
+}
+
+//as segment
+func (n *Node) Segment() *seg.Seg {
+	var a, b = n.SegmentPoints()
+	return seg.NewSeg(a, b, n.Range.I, n.Range.J)
+}
+
+//hull segment as polyline
+func (n *Node) SegmentAsPolyline() *pln.Polyline {
+	var a, b = n.SegmentPoints()
+	return pln.New([]*geom.Point{a, b})
+}
+
+//segment points
+func (n *Node) SegmentPoints() (*geom.Point, *geom.Point) {
+	return n.First(), n.Last()
+}
+
+func NewDBNode(node *node.Node) *Node {
+	return &Node{
+		Id:          node.Id(),
+		Coordinates: node.Polyline.Coordinates,
+		Range:       node.Range,
+		WTK:         node.Geom.WKT(),
+		HullType:    node.Geom.Type().Value(),
 	}
 }
 
-func NewNodeFromDB(ndb *DBNode) *node.Node {
+func NewNodeFromDB(ndb *Node) *node.Node {
 	var n = &node.Node{
-		Polyline: pln.New(ndb.Pln),
-		Range:    rng.NewRange(ndb.Range[0], ndb.Range[1]),
+		Polyline: pln.New(ndb.Coordinates),
+		Range:    ndb.Range,
 		Geom:     geom.NewGeometry(ndb.WTK),
 	}
 	n.SetId(ndb.Id)
-	return n
-	//return &DBNode{
-	//	Id:       node.Id(),
-	//	HullType: node.Geom.Type().Value(),
-	//	Pln:      node.Polyline.Coordinates,
-	//	Range:    node.Range.AsArray(),
-	//	WTK:      node.Geom.WKT(),
-	//}
-}
-
-func BulkLoadNodes(src *DataSrc, nodes []*node.Node) error {
-	var vals = make([][]string, 0)
-	for _, h := range nodes {
-		vals = append(vals, []string{
-			fmt.Sprintf(`'%v'`, Serialize(NewDBNode(h))),
-			fmt.Sprintf(`ST_GeomFromText('%v', %v)`, h.Geom.WKT(), src.SRID),
-		})
-	}
-	_, err := src.Exec(SQLInsertIntoTable(src.NodeTable, nodeTblColumns, vals))
-	return err
-}
-
-// go binary encoder
-func Serialize(n *DBNode) string {
-	var buf bytes.Buffer
-	var err = gob.NewEncoder(&buf).Encode(n)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	return base64.StdEncoding.EncodeToString(buf.Bytes())
-}
-
-// go binary decoder
-func Deserialize(str string) *DBNode {
-	var n *DBNode
-	var dat, err = base64.StdEncoding.DecodeString(str)
-	if err != nil {
-		log.Fatalln(`failed base64 Decode`, err)
-	}
-	var buf bytes.Buffer
-	_, err = buf.Write(dat)
-	if err != nil {
-		log.Fatalln(`failed to write to buffer`)
-	}
-	err = gob.NewDecoder(&buf).Decode(&n)
-	if err != nil {
-		fmt.Println(`failed gob Decode`, err)
-	}
 	return n
 }
