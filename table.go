@@ -1,9 +1,9 @@
 package db
 
 import (
+	"fmt"
 	"time"
 	"math/rand"
-	"fmt"
 )
 
 const charSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -20,10 +20,9 @@ func randTableName(n int) string {
 	return string(b)
 }
 
-
-
 func CreateNodeTable(src *DataSrc) error {
 	var err error
+	var tbl = src.NodeTable
 	if src.NodeTable == "" {
 		src.NodeTable = randTableName(10)
 		var hullSQL = fmt.Sprintf(`
@@ -35,8 +34,9 @@ func CreateNodeTable(src *DataSrc) error {
 		    status int DEFAULT 0,
 		    CONSTRAINT pid_%v PRIMARY KEY (id)
 		) WITH (OIDS=FALSE);
-		CREATE INDEX %v_gidx ON %v USING GIST (geom);
-	`, src.NodeTable, src.SRID, src.NodeTable, src.NodeTable, src.NodeTable)
+		CREATE INDEX idx_status_%v ON %v (status);
+		CREATE INDEX gidx_%v ON %v USING GIST (geom);
+	`, tbl, src.SRID, tbl, tbl, tbl, tbl, tbl)
 		_, err = src.Exec(hullSQL)
 	}
 	return err

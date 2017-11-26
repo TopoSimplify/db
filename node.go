@@ -7,9 +7,11 @@ import (
 	"simplex/rng"
 	"simplex/seg"
 	"github.com/intdxdt/mbr"
+	"fmt"
+	"github.com/intdxdt/random"
 )
 
-const nodeTblColumns = "fid, gob, geom"
+const NodeTblColumns = "fid, gob, geom"
 
 //Node
 type Node struct {
@@ -61,6 +63,11 @@ func (n *Node) Last() *geom.Point {
 	return n.Coordinates[len(n.Coordinates)-1]
 }
 
+//subnode ids
+func (self *Node) SubNodeIds() (string, string) {
+	return fmt.Sprintf("%v/a", self.Id), fmt.Sprintf("%v/b", self.Id)
+}
+
 //as segment
 func (n *Node) Segment() *seg.Seg {
 	var a, b = n.SegmentPoints()
@@ -87,7 +94,7 @@ func (n *Node) Collapsible(other *Node) bool {
 	}
 	//or hull can be a linear for
 	//colinear boundaries where self.range.size > 1
-	if 	_, ok := n.Geometry().(*geom.LineString); ok {
+	if _, ok := n.Geometry().(*geom.LineString); ok {
 		return true
 	}
 
@@ -113,6 +120,18 @@ func (n *Node) Collapsible(other *Node) bool {
 	panic("unimplemented : hull type is handled")
 }
 
+func New(coordinates []*geom.Point, r *rng.Range, fid, part int, gfn geom.GeometryFn, ids ...string) *Node {
+	var id string
+	if len(ids) > 0 {
+		id = ids[0]
+	} else {
+		id = random.String(8)
+	}
+	var n = node.New(coordinates, r, gfn, id)
+	var dn = NewDBNode(n)
+	dn.FID, dn.Part = fid, part
+	return dn
+}
 
 func NewDBNode(node *node.Node) *Node {
 	return &Node{

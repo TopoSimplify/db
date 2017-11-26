@@ -11,7 +11,7 @@ func BulkLoadNodes(src *DataSrc, nodes []*Node) error {
 			fmt.Sprintf(`ST_GeomFromText('%v', %v)`, h.WTK, src.SRID),
 		})
 	}
-	_, err := src.Exec(SQLInsertIntoTable(src.NodeTable, nodeTblColumns, vals))
+	_, err := src.Exec(SQLInsertIntoTable(src.NodeTable, NodeTblColumns, vals))
 	return err
 }
 
