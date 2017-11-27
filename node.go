@@ -1,17 +1,17 @@
 package db
 
 import (
+	"fmt"
 	"simplex/node"
-	"github.com/intdxdt/geom"
 	"simplex/pln"
 	"simplex/rng"
 	"simplex/seg"
+	"github.com/intdxdt/geom"
 	"github.com/intdxdt/mbr"
-	"fmt"
 	"github.com/intdxdt/random"
 )
 
-const NodeTblColumns = "fid, gob, geom"
+const NodeTblColumns = "i, j, size, fid, part, gob, geom"
 
 //Node
 type Node struct {
@@ -25,6 +25,43 @@ type Node struct {
 	WTK         string
 	geom        geom.Geometry
 	polyline    *pln.Polyline
+}
+
+func (n *Node) ColumnValues(srid int) []string {
+	return []string{
+		fmt.Sprintf(`%v`, n.Range.I),
+		fmt.Sprintf(`%v`, n.Range.J),
+		fmt.Sprintf(`%v`, n.Range.Size()),
+		fmt.Sprintf(`%v`, n.FID),
+		fmt.Sprintf(`%v`, n.Part),
+		fmt.Sprintf(`'%v'`, Serialize(n)),
+		fmt.Sprintf(`ST_GeomFromText('%v', %v)`, n.WTK, srid),
+	}
+}
+
+func (n *Node) InsertSQL(nodeTable string, srid int, nodes ...*Node) string {
+	var vals = [][]string{n.ColumnValues(srid)}
+	for _, h := range nodes {
+		if n == h {
+			continue
+		}
+		vals = append(vals, h.ColumnValues(srid))
+	}
+	return SQLInsertIntoNodeTable(nodeTable, NodeTblColumns, vals)
+}
+
+func (n *Node) UpdateSQL(nodeTable string, status int) string {
+	return fmt.Sprintf(
+		`UPDATE %v SET STATUS = %v WHERE id=%v;`,
+		nodeTable, status, n.NID,
+	)
+}
+
+func (n *Node) DeleteSQL(nodeTable string, ) string {
+	return fmt.Sprintf(
+		`DELETE FROM %v WHERE id=%v;`,
+		nodeTable, n.NID,
+	)
 }
 
 func (n *Node) Geometry() geom.Geometry {
@@ -64,8 +101,8 @@ func (n *Node) Last() *geom.Point {
 }
 
 //subnode ids
-func (self *Node) SubNodeIds() (string, string) {
-	return fmt.Sprintf("%v/a", self.Id), fmt.Sprintf("%v/b", self.Id)
+func (n *Node) SubNodeIds() (string, string) {
+	return fmt.Sprintf("%v/a", n.Id), fmt.Sprintf("%v/b", n.Id)
 }
 
 //as segment

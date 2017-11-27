@@ -58,7 +58,7 @@ func (db *DataSrc) Query(query string) (*sql.Rows, error) {
 
 func (db *DataSrc) GetSRID() int {
 	rows, err := db.Query(fmt.Sprintf(
-		`SELECT st_srid (%v) as srid FROM %v LIMIT 1;`,
+		`SELECT ST_SRID(%v) as srid FROM %v LIMIT 1;`,
 		db.Config.GeometryColumn, db.Config.Table,
 	))
 	if err != nil {
@@ -71,9 +71,17 @@ func (db *DataSrc) GetSRID() int {
 	return srid
 }
 
-func SQLInsertIntoTable(table string, columns string, values [][]string) string {
+func SQLInsertIntoNodeTable(table string, columns string, values [][]string) string {
 	var n = len(values) - 1
 	var buf bytes.Buffer
+	if len(values)< 0{
+		log.Fatalln("no values provided")
+	}
+	var v = values[0]
+	var c = strings.Split(columns, ",")
+	if len(c) != len(v){
+		log.Fatalln("inconsistent number of columns")
+	}
 
 	for i, row := range values {
 		buf.WriteString("(" + strings.Join(row, ",") + ")")
