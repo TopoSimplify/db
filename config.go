@@ -13,7 +13,6 @@ type Config struct {
 	Table          string `toml:"table"`
 	GeometryColumn string `toml:"geometrycolumn"`
 	IdColumn       string `toml:"idcolumn"`
-	SRID           int    `toml:"srid"`
 }
 
 func NewConfig(fileName string) Config {

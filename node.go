@@ -52,15 +52,14 @@ func (n *Node) InsertSQL(nodeTable string, srid int, nodes ...*Node) string {
 
 func (n *Node) UpdateSQL(nodeTable string, status int) string {
 	return fmt.Sprintf(
-		`UPDATE %v SET STATUS = %v WHERE id=%v;`,
+		`UPDATE %v SET status=%v WHERE id=%v;`,
 		nodeTable, status, n.NID,
 	)
 }
 
 func (n *Node) DeleteSQL(nodeTable string, ) string {
 	return fmt.Sprintf(
-		`DELETE FROM %v WHERE id=%v;`,
-		nodeTable, n.NID,
+		`DELETE FROM %v WHERE id=%v;`, nodeTable, n.NID,
 	)
 }
 

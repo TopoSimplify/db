@@ -33,7 +33,9 @@ CREATE INDEX idx_status_{{.NodeTable}} ON {{.NodeTable}} (status);
 CREATE INDEX gidx_{{.NodeTable}} ON {{.NodeTable}} USING GIST (geom);
 `
 
+
 var nodeTemplate *template.Template
+var geomColTemplate *template.Template
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
