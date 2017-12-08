@@ -33,8 +33,8 @@ func NewDataSrc(configToml string) *DataSrc {
 	))
 
 	if err == nil {
-		dsrc.Src = sqlsrc
-		dsrc.Dim = dsrc.CoordDim()
+		dsrc.Src  = sqlsrc
+		dsrc.Dim  = dsrc.CoordDim()
 		dsrc.SRID = dsrc.GetSRID()
 	} else {
 		log.Fatalln(err)
