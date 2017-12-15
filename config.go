@@ -6,6 +6,7 @@ import (
 )
 
 type Config struct {
+	Ignore         bool `toml:"ignore"`
 	Host           string `toml:"host"`
 	Password       string `toml:"password"`
 	Database       string `toml:"database"`
@@ -13,6 +14,10 @@ type Config struct {
 	Table          string `toml:"table"`
 	GeometryColumn string `toml:"geometrycolumn"`
 	IdColumn       string `toml:"idcolumn"`
+}
+
+func (cfg Config) Clone() Config {
+	return cfg
 }
 
 func NewConfig(fileName string) Config {

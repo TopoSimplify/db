@@ -26,15 +26,18 @@ type GeomCol struct {
 
 func NewDataSrc(configToml string) *DataSrc {
 	var cfg = NewConfig(configToml)
+	if cfg.Ignore {
+		return nil
+	}
 	var dsrc = &DataSrc{Config: cfg}
-	var sqlsrc, err = sql.Open("postgres", fmt.Sprintf(
+	var sqlSrc, err = sql.Open("postgres", fmt.Sprintf(
 		"user=%s password=%s dbname=%s sslmode=disable",
 		cfg.User, cfg.Password, cfg.Database,
 	))
 
 	if err == nil {
-		dsrc.Src  = sqlsrc
-		dsrc.Dim  = dsrc.CoordDim()
+		dsrc.Src = sqlSrc
+		dsrc.Dim = dsrc.CoordDim()
 		dsrc.SRID = dsrc.GetSRID()
 	} else {
 		log.Fatalln(err)
@@ -48,12 +51,12 @@ func (dbsrc *DataSrc) Close() *DataSrc {
 	return dbsrc
 }
 
-func (dbsrc *DataSrc) AlterAsMultiLineString(tableName, geomColumn string , srid int) *DataSrc {
+func (dbsrc *DataSrc) AlterAsMultiLineString(tableName, geomColumn string, srid int) *DataSrc {
 	var query = fmt.Sprintf(`
 			ALTER TABLE %v
 			ALTER COLUMN %v TYPE geometry(MULTILINESTRING, %v)
 			USING ST_Multi(%v);
-		`,tableName, geomColumn, srid, geomColumn,
+		`, tableName, geomColumn, srid, geomColumn,
 	)
 
 	var _, err = dbsrc.Exec(query)
