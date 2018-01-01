@@ -27,6 +27,30 @@ type Node struct {
 	polyline    *pln.Polyline
 }
 
+func NewDBNode(coordinates []*geom.Point, r *rng.Range, fid, part int, gfn geom.GeometryFn, ids ...string) *Node {
+	var id string
+	if len(ids) > 0 {
+		id = ids[0]
+	} else {
+		id = random.String(8)
+	}
+	var n = NewDBNodeFromDPNode(node.New(coordinates, r, gfn, id))
+	n.FID  = fid
+	n.Part = part
+	return n
+}
+
+func NewDBNodeFromDPNode(node *node.Node) *Node {
+	return &Node{
+		Id:          node.Id(),
+		Coordinates: node.Polyline.Coordinates,
+		Range:       node.Range,
+		WTK:         node.Geom.WKT(),
+		HullType:    node.Geom.Type().Value(),
+		geom:        node.Geom,
+	}
+}
+
 func (n *Node) ColumnValues(srid int) []string {
 	return []string{
 		fmt.Sprintf(`%v`, n.Range.I),
@@ -154,37 +178,4 @@ func (n *Node) Collapsible(other *Node) bool {
 		return !ply.Shell.PointCompletelyInRing(t)
 	}
 	panic("unimplemented : hull type is handled")
-}
-
-func New(coordinates []*geom.Point, r *rng.Range, fid, part int, gfn geom.GeometryFn, ids ...string) *Node {
-	var id string
-	if len(ids) > 0 {
-		id = ids[0]
-	} else {
-		id = random.String(8)
-	}
-	var n = node.New(coordinates, r, gfn, id)
-	var dn = NewDBNode(n)
-	dn.FID, dn.Part = fid, part
-	return dn
-}
-
-func NewDBNode(node *node.Node) *Node {
-	return &Node{
-		Id:          node.Id(),
-		Coordinates: node.Polyline.Coordinates,
-		Range:       node.Range,
-		WTK:         node.Geom.WKT(),
-		HullType:    node.Geom.Type().Value(),
-	}
-}
-
-func NewNodeFromDB(ndb *Node) *node.Node {
-	var n = &node.Node{
-		Polyline: pln.New(ndb.Coordinates),
-		Range:    ndb.Range,
-		Geom:     geom.NewGeometry(ndb.WTK),
-	}
-	n.SetId(ndb.Id)
-	return n
 }
