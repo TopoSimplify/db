@@ -11,8 +11,6 @@ import (
 	"github.com/intdxdt/random"
 )
 
-const NodeTblColumns = "i, j, size, fid, gob, geom"
-
 //Node
 type Node struct {
 	Id          string
@@ -34,7 +32,7 @@ func NewDBNode(coordinates []*geom.Point, r *rng.Range, fid int, gfn geom.Geomet
 		id = random.String(8)
 	}
 	var n = NewDBNodeFromDPNode(node.New(coordinates, r, gfn, id))
-	n.FID  = fid
+	n.FID = fid
 	return n
 }
 
@@ -49,18 +47,23 @@ func NewDBNodeFromDPNode(node *node.Node) *Node {
 	}
 }
 
+//Note : column fields corresponding to node.ColumnValues
+func (n *Node) ColumnFields() string {
+	return "fid, node, geom, i, j, size"
+}
+
 func (n *Node) ColumnValues(srid int) []string {
 	return []string{
-		fmt.Sprintf(`%v`, n.Range.I),
-		fmt.Sprintf(`%v`, n.Range.J),
-		fmt.Sprintf(`%v`, n.Range.Size()),
 		fmt.Sprintf(`%v`, n.FID),
 		fmt.Sprintf(`'%v'`, Serialize(n)),
 		fmt.Sprintf(`ST_GeomFromText('%v', %v)`, n.WTK, srid),
+		fmt.Sprintf(`%v`, n.Range.I),
+		fmt.Sprintf(`%v`, n.Range.J),
+		fmt.Sprintf(`%v`, n.Range.Size()),
 	}
 }
 
-func (n *Node) InsertSQL(nodeTable string, srid int, nodes ...*Node) string {
+func (n *Node) InsertSQL(nodeTable string,  srid int, nodes ...*Node) string {
 	var vals = [][]string{n.ColumnValues(srid)}
 	for _, h := range nodes {
 		if n == h {
@@ -68,7 +71,7 @@ func (n *Node) InsertSQL(nodeTable string, srid int, nodes ...*Node) string {
 		}
 		vals = append(vals, h.ColumnValues(srid))
 	}
-	return SQLInsertIntoNodeTable(nodeTable, NodeTblColumns, vals)
+	return SQLInsertIntoNodeTable(nodeTable, n.ColumnFields(), vals)
 }
 
 func (n *Node) UpdateSQL(nodeTable string, status int) string {

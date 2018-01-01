@@ -10,11 +10,11 @@ import (
 )
 
 type DataSrc struct {
-	Src       *sql.DB
-	Config    Config
-	SRID      int
-	Dim       int
-	NodeTable string
+	Src    *sql.DB
+	Config Config
+	SRID   int
+	Dim    int
+	Table  string
 }
 
 type GeomCol struct {
