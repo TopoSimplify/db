@@ -11,14 +11,13 @@ import (
 	"github.com/intdxdt/random"
 )
 
-const NodeTblColumns = "i, j, size, fid, part, gob, geom"
+const NodeTblColumns = "i, j, size, fid, gob, geom"
 
 //Node
 type Node struct {
 	Id          string
 	FID         int
 	NID         int
-	Part        int
 	Coordinates []*geom.Point
 	Range       *rng.Range
 	HullType    int
@@ -27,7 +26,7 @@ type Node struct {
 	polyline    *pln.Polyline
 }
 
-func NewDBNode(coordinates []*geom.Point, r *rng.Range, fid, part int, gfn geom.GeometryFn, ids ...string) *Node {
+func NewDBNode(coordinates []*geom.Point, r *rng.Range, fid int, gfn geom.GeometryFn, ids ...string) *Node {
 	var id string
 	if len(ids) > 0 {
 		id = ids[0]
@@ -36,7 +35,6 @@ func NewDBNode(coordinates []*geom.Point, r *rng.Range, fid, part int, gfn geom.
 	}
 	var n = NewDBNodeFromDPNode(node.New(coordinates, r, gfn, id))
 	n.FID  = fid
-	n.Part = part
 	return n
 }
 
@@ -57,7 +55,6 @@ func (n *Node) ColumnValues(srid int) []string {
 		fmt.Sprintf(`%v`, n.Range.J),
 		fmt.Sprintf(`%v`, n.Range.Size()),
 		fmt.Sprintf(`%v`, n.FID),
-		fmt.Sprintf(`%v`, n.Part),
 		fmt.Sprintf(`'%v'`, Serialize(n)),
 		fmt.Sprintf(`ST_GeomFromText('%v', %v)`, n.WTK, srid),
 	}

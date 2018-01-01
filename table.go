@@ -2,11 +2,11 @@ package db
 
 import (
 	"fmt"
+	"log"
 	"time"
+	"bytes"
 	"math/rand"
 	"text/template"
-	"bytes"
-	"log"
 )
 
 const charSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS {{.NodeTable}} (
     j INT NOT NULL,
     size INT CHECK (size > 0),
     fid INT NOT NULL,
-    part INT NOT NULL,
     gob TEXT NOT NULL,
     geom GEOMETRY(Geometry, {{.SRID}}) NOT NULL,
     status INT DEFAULT 0,
@@ -28,7 +27,6 @@ CREATE INDEX idx_i_{{.NodeTable}} ON {{.NodeTable}} (i);
 CREATE INDEX idx_j_{{.NodeTable}} ON {{.NodeTable}} (j);
 CREATE INDEX idx_size_{{.NodeTable}} ON {{.NodeTable}} (size);
 CREATE INDEX idx_fid_{{.NodeTable}} ON {{.NodeTable}} (fid);
-CREATE INDEX idx_part_{{.NodeTable}} ON {{.NodeTable}} (part);
 CREATE INDEX idx_status_{{.NodeTable}} ON {{.NodeTable}} (status);
 CREATE INDEX gidx_{{.NodeTable}} ON {{.NodeTable}} USING GIST (geom);
 `
