@@ -47,32 +47,6 @@ func NewDBNodeFromDPNode(node *node.Node) *Node {
 	}
 }
 
-//Note : column fields corresponding to node.ColumnValues
-func (n *Node) ColumnFields() string {
-	return "fid, node, geom, i, j, size"
-}
-
-func (n *Node) ColumnValues(srid int) []string {
-	return []string{
-		fmt.Sprintf(`%v`, n.FID),
-		fmt.Sprintf(`'%v'`, Serialize(n)),
-		fmt.Sprintf(`ST_GeomFromText('%v', %v)`, n.WTK, srid),
-		fmt.Sprintf(`%v`, n.Range.I),
-		fmt.Sprintf(`%v`, n.Range.J),
-		fmt.Sprintf(`%v`, n.Range.Size()),
-	}
-}
-
-func (n *Node) InsertSQL(nodeTable string,  srid int, nodes ...*Node) string {
-	var vals = [][]string{n.ColumnValues(srid)}
-	for _, h := range nodes {
-		if n == h {
-			continue
-		}
-		vals = append(vals, h.ColumnValues(srid))
-	}
-	return SQLInsertIntoNodeTable(nodeTable, n.ColumnFields(), vals)
-}
 
 func (n *Node) UpdateSQL(nodeTable string, status int) string {
 	return fmt.Sprintf(

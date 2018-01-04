@@ -127,7 +127,7 @@ func (dbsrc *DataSrc) GetSRID() int {
 	return srid
 }
 
-func SQLInsertIntoNodeTable(table string, columns string, values [][]string) string {
+func SQLInsertIntoTable(table string, columns string, values [][]string) string {
 	var n = len(values) - 1
 	var buf bytes.Buffer
 	if len(values) < 0 {
