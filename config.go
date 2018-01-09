@@ -5,7 +5,6 @@ import (
 	"github.com/intdxdt/fileutil"
 )
 
-
 type Config struct {
 	Ignore         bool `toml:"ignore"`
 	Host           string `toml:"host"`

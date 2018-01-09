@@ -1,11 +1,11 @@
 package db
 
 import (
+	"log"
+	"fmt"
 	"bytes"
 	"encoding/gob"
-	"log"
 	"encoding/base64"
-	"fmt"
 )
 
 // go binary encoder
