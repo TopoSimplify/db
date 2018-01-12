@@ -30,11 +30,12 @@ func NewDataSrc(configToml string) *DataSrc {
 		return nil
 	}
 	var dsrc = &DataSrc{Config: cfg}
+
 	var sqlSrc, err = sql.Open("postgres", fmt.Sprintf(
 		"user=%s password=%s dbname=%s sslmode=disable",
 		cfg.User, cfg.Password, cfg.Database,
 	))
-
+	sqlSrc.SetMaxOpenConns(-1)
 	if err == nil {
 		dsrc.Src = sqlSrc
 		dsrc.Dim = dsrc.CoordDim()
@@ -98,31 +99,36 @@ func (dbsrc *DataSrc) Query(query string) (*sql.Rows, error) {
 }
 
 func (dbsrc *DataSrc) CoordDim() int {
-	rows, err := dbsrc.Query(fmt.Sprintf(
+	h, err := dbsrc.Query(fmt.Sprintf(
 		`SELECT ST_CoordDim(%v) as dim FROM %v LIMIT 1;`,
 		dbsrc.Config.GeometryColumn, dbsrc.Config.Table,
 	))
+
 	if err != nil {
-		log.Fatalln(err)
+		log.Panic(err)
 	}
+	defer h.Close()
+
 	var dim int
-	for rows.Next() {
-		rows.Scan(&dim)
+	for h.Next() {
+		h.Scan(&dim)
 	}
 	return dim
 }
 
 func (dbsrc *DataSrc) GetSRID() int {
-	rows, err := dbsrc.Query(fmt.Sprintf(
+	h, err := dbsrc.Query(fmt.Sprintf(
 		`SELECT ST_SRID(%v) as srid FROM %v LIMIT 1;`,
 		dbsrc.Config.GeometryColumn, dbsrc.Config.Table,
 	))
 	if err != nil {
 		log.Fatalln(err)
 	}
+	defer h.Close()
+
 	var srid int
-	for rows.Next() {
-		rows.Scan(&srid)
+	for h.Next() {
+		h.Scan(&srid)
 	}
 	return srid
 }
