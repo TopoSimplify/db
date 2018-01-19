@@ -2,11 +2,10 @@ package db
 
 import (
 	"github.com/naoina/toml"
-	"github.com/intdxdt/fileutil"
 )
 
 type Config struct {
-	Ignore         bool `toml:"ignore"`
+	Ignore         bool   `toml:"ignore"`
 	Host           string `toml:"host"`
 	Password       string `toml:"password"`
 	Database       string `toml:"database"`
@@ -20,13 +19,9 @@ func (cfg Config) Clone() Config {
 	return cfg
 }
 
-func NewConfig(fileName string) Config {
+func NewConfig(txtToml string) Config {
 	var cfg Config
-	var txt, err = fileutil.ReadAllOfFile(fileName)
-	if err != nil {
-		panic(err)
-	}
-	err = toml.Unmarshal([]byte(txt), &cfg)
+	var err = toml.Unmarshal([]byte(txtToml), &cfg)
 	if err != nil {
 		panic(err)
 	}

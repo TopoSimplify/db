@@ -48,7 +48,9 @@ func NewDataSrc(configToml string) *DataSrc {
 }
 
 func (dbsrc *DataSrc) Close() *DataSrc {
-	dbsrc.Src.Close()
+	if  err := dbsrc.Src.Close(); err != nil {
+		log.Panic(err)
+	}
 	return dbsrc
 }
 
