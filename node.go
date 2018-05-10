@@ -2,13 +2,13 @@ package db
 
 import (
 	"fmt"
-	"simplex/node"
-	"simplex/pln"
-	"simplex/rng"
-	"simplex/seg"
-	"github.com/intdxdt/geom"
 	"github.com/intdxdt/mbr"
+	"github.com/intdxdt/geom"
 	"github.com/intdxdt/random"
+	"github.com/TopoSimplify/node"
+	"github.com/TopoSimplify/pln"
+	"github.com/TopoSimplify/rng"
+	"github.com/TopoSimplify/seg"
 )
 
 //Node
