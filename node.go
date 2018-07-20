@@ -16,15 +16,15 @@ type Node struct {
 	Id          string
 	FID         int
 	NID         int
-	Coordinates []*geom.Point
-	Range       *rng.Range
-	HullType    int
+	Coordinates []geom.Point
+	Range       rng.Rng
+	HullType    geom.GeoType
 	WTK         string
 	geom        geom.Geometry
 	polyline    *pln.Polyline
 }
 
-func NewDBNode(coordinates []*geom.Point, r *rng.Range, fid int, gfn geom.GeometryFn, ids ...string) *Node {
+func NewDBNode(coordinates []geom.Point, r rng.Rng, fid int, gfn geom.GeometryFn, ids ...string) *Node {
 	var id string
 	if len(ids) > 0 {
 		id = ids[0]
@@ -41,12 +41,11 @@ func NewDBNodeFromDPNode(node *node.Node) *Node {
 		Id:          node.Id(),
 		Coordinates: node.Polyline.Coordinates,
 		Range:       node.Range,
-		WTK:         node.Geom.WKT(),
-		HullType:    node.Geom.Type().Value(),
-		geom:        node.Geom,
+		WTK:         node.Geometry.WKT(),
+		HullType:    node.Geometry.Type(),
+		geom:        node.Geometry,
 	}
 }
-
 
 func (n *Node) UpdateSQL(nodeTable string, status int) string {
 	return fmt.Sprintf(
@@ -65,7 +64,7 @@ func (n *Node) Geometry() geom.Geometry {
 	if n.geom != nil {
 		return n.geom
 	}
-	n.geom = geom.NewGeometry(n.WTK)
+	n.geom = geom.ReadGeometry(n.WTK)
 	return n.geom
 }
 
@@ -87,13 +86,18 @@ func (n *Node) String() string {
 	return n.Geometry().WKT()
 }
 
+//number of coordinates
+func (n *Node) Size() int {
+	return len(n.Coordinates)
+}
+
 //first point in coordinates
-func (n *Node) First() *geom.Point {
+func (n *Node) First() geom.Point {
 	return n.Coordinates[0]
 }
 
 //last point in coordinates
-func (n *Node) Last() *geom.Point {
+func (n *Node) Last() geom.Point {
 	return n.Coordinates[len(n.Coordinates)-1]
 }
 
@@ -104,19 +108,14 @@ func (n *Node) SubNodeIds() (string, string) {
 
 //as segment
 func (n *Node) Segment() *seg.Seg {
-	var a, b = n.SegmentPoints()
-	return seg.NewSeg(a, b, n.Range.I, n.Range.J)
+	var i, j = 0, len(n.Coordinates)-1
+	return seg.NewSeg(&n.Coordinates[i], &n.Coordinates[j], n.Range.I, n.Range.J)
 }
 
 //hull segment as polyline
 func (n *Node) SegmentAsPolyline() *pln.Polyline {
-	var a, b = n.SegmentPoints()
-	return pln.New([]*geom.Point{a, b})
-}
-
-//segment points
-func (n *Node) SegmentPoints() (*geom.Point, *geom.Point) {
-	return n.First(), n.Last()
+	var i, j = 0, len(n.Coordinates)-1
+	return pln.New([]geom.Point{n.Coordinates[i], n.Coordinates[j]})
 }
 
 //Is node collapsible with respect to other
@@ -132,8 +131,8 @@ func (n *Node) Collapsible(other *Node) bool {
 		return true
 	}
 
-	var ai, aj = n.SegmentPoints()
-	var bi, bj = other.SegmentPoints()
+	var ai, aj = &n.Coordinates[0], &n.Coordinates[n.Size()-1]
+	var bi, bj = &other.Coordinates[0], &other.Coordinates[other.Size()-1]
 
 	var c *geom.Point
 	if ai.Equals2D(bi) || aj.Equals2D(bi) {
