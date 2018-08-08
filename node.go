@@ -14,14 +14,15 @@ import (
 //Node
 type Node struct {
 	Id          string
+	Coordinates []geom.Point
+	polyline    *pln.Polyline
+	Range       rng.Rng
+	geom        geom.Geometry
+
 	FID         int
 	NID         int
-	Coordinates []geom.Point
-	Range       rng.Rng
 	HullType    geom.GeoType
 	WTK         string
-	geom        geom.Geometry
-	polyline    *pln.Polyline
 }
 
 func NewDBNode(coordinates []geom.Point, r rng.Rng, fid int, gfn geom.GeometryFn, ids ...string) *Node {
@@ -31,7 +32,7 @@ func NewDBNode(coordinates []geom.Point, r rng.Rng, fid int, gfn geom.GeometryFn
 	} else {
 		id = random.String(8)
 	}
-	var n = NewDBNodeFromDPNode(node.New(coordinates, r, gfn, id))
+	var n = NewDBNodeFromDPNode(node.CreateNode(coordinates, r, gfn, id))
 	n.FID = fid
 	return n
 }
@@ -41,9 +42,9 @@ func NewDBNodeFromDPNode(node *node.Node) *Node {
 		Id:          node.Id(),
 		Coordinates: node.Polyline.Coordinates,
 		Range:       node.Range,
-		WTK:         node.Geometry.WKT(),
-		HullType:    node.Geometry.Type(),
-		geom:        node.Geometry,
+		WTK:         node.Geom.WKT(),
+		HullType:    node.Geom.Type(),
+		geom:        node.Geom,
 	}
 }
 
@@ -72,7 +73,7 @@ func (n *Node) Polyline() *pln.Polyline {
 	if n.polyline != nil {
 		return n.polyline
 	}
-	n.polyline = pln.New(n.Coordinates)
+	n.polyline = pln.CreatePolyline(n.Coordinates)
 	return n.polyline
 }
 
@@ -115,7 +116,7 @@ func (n *Node) Segment() *seg.Seg {
 //hull segment as polyline
 func (n *Node) SegmentAsPolyline() *pln.Polyline {
 	var i, j = 0, len(n.Coordinates)-1
-	return pln.New([]geom.Point{n.Coordinates[i], n.Coordinates[j]})
+	return pln.CreatePolyline([]geom.Point{n.Coordinates[i], n.Coordinates[j]})
 }
 
 //Is node collapsible with respect to other
