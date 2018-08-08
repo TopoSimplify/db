@@ -9,13 +9,14 @@ import (
 	"github.com/TopoSimplify/pln"
 	"github.com/TopoSimplify/rng"
 	"github.com/TopoSimplify/seg"
+	"github.com/intdxdt/iter"
 )
 
 //Node
 type Node struct {
-	Id          string
-	Coordinates []geom.Point
-	polyline    *pln.Polyline
+	Id          int
+	Coordinates geom.Coords
+	polyline    pln.Polyline
 	Range       rng.Rng
 	geom        geom.Geometry
 
@@ -25,21 +26,15 @@ type Node struct {
 	WTK         string
 }
 
-func NewDBNode(coordinates []geom.Point, r rng.Rng, fid int, gfn geom.GeometryFn, ids ...string) *Node {
-	var id string
-	if len(ids) > 0 {
-		id = ids[0]
-	} else {
-		id = random.String(8)
-	}
-	var n = NewDBNodeFromDPNode(node.CreateNode(coordinates, r, gfn, id))
+func NewDBNode(id *iter.Igen, coordinates geom.Coords, r rng.Rng, fid int, gfn func(geom.Coords) geom.Geometry) Node {
+	var n = NewDBNodeFromDPNode(node.CreateNode(id, coordinates, r, gfn))
 	n.FID = fid
 	return n
 }
 
-func NewDBNodeFromDPNode(node *node.Node) *Node {
-	return &Node{
-		Id:          node.Id(),
+func NewDBNodeFromDPNode(node node.Node) Node {
+	return Node{
+		Id:          node.Id,
 		Coordinates: node.Polyline.Coordinates,
 		Range:       node.Range,
 		WTK:         node.Geom.WKT(),
@@ -69,8 +64,8 @@ func (n *Node) Geometry() geom.Geometry {
 	return n.geom
 }
 
-func (n *Node) Polyline() *pln.Polyline {
-	if n.polyline != nil {
+func (n *Node) Polyline() pln.Polyline {
+	if n.polyline.LineString != nil {
 		return n.polyline
 	}
 	n.polyline = pln.CreatePolyline(n.Coordinates)
@@ -89,17 +84,17 @@ func (n *Node) String() string {
 
 //number of coordinates
 func (n *Node) Size() int {
-	return len(n.Coordinates)
+	return n.Coordinates.Len()
 }
 
 //first point in coordinates
-func (n *Node) First() geom.Point {
-	return n.Coordinates[0]
+func (n *Node) First() *geom.Point {
+	return n.Coordinates.Pt(0)
 }
 
 //last point in coordinates
-func (n *Node) Last() geom.Point {
-	return n.Coordinates[len(n.Coordinates)-1]
+func (n *Node) Last() *geom.Point {
+	return n.Coordinates.Pt(n.Coordinates.Len()-1)
 }
 
 //subnode ids
@@ -108,15 +103,14 @@ func (n *Node) SubNodeIds() (string, string) {
 }
 
 //as segment
-func (n *Node) Segment() *seg.Seg {
-	var i, j = 0, len(n.Coordinates)-1
-	return seg.NewSeg(&n.Coordinates[i], &n.Coordinates[j], n.Range.I, n.Range.J)
+func (n *Node) Segment() *geom.Segment {
+	var i, j = 0, n.Coordinates.Len()-1
+	return geom.NewSegment(n.Coordinates, i, j)
 }
 
 //hull segment as polyline
-func (n *Node) SegmentAsPolyline() *pln.Polyline {
-	var i, j = 0, len(n.Coordinates)-1
-	return pln.CreatePolyline([]geom.Point{n.Coordinates[i], n.Coordinates[j]})
+func (n *Node) SegmentAsPolyline() pln.Polyline {
+	return pln.CreatePolyline(geom.Coordinates([]geom.Point{*n.First(), *n.Last()}))
 }
 
 //Is node collapsible with respect to other
@@ -132,8 +126,8 @@ func (n *Node) Collapsible(other *Node) bool {
 		return true
 	}
 
-	var ai, aj = &n.Coordinates[0], &n.Coordinates[n.Size()-1]
-	var bi, bj = &other.Coordinates[0], &other.Coordinates[other.Size()-1]
+	var ai, aj = n.First(), n.Last()
+	var bi, bj = other.First(), other.Last()
 
 	var c *geom.Point
 	if ai.Equals2D(bi) || aj.Equals2D(bi) {
