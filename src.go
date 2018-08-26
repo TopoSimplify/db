@@ -1,12 +1,12 @@
 package db
 
 import (
-	"fmt"
-	"log"
 	"bytes"
-	"strings"
 	"database/sql"
+	"fmt"
 	_ "github.com/lib/pq"
+	"log"
+	"strings"
 )
 
 type DataSrc struct {
@@ -48,7 +48,7 @@ func NewDataSrc(configToml string) *DataSrc {
 }
 
 func (dbsrc *DataSrc) Close() *DataSrc {
-	if  err := dbsrc.Src.Close(); err != nil {
+	if err := dbsrc.Src.Close(); err != nil {
 		log.Panic(err)
 	}
 	return dbsrc

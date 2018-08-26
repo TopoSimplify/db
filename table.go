@@ -1,11 +1,12 @@
 package db
 
 import (
-	"log"
-	"fmt"
 	"bytes"
+	"fmt"
+	"log"
 	"text/template"
 )
+
 const IdColumn = "id"
 const GeomColumn = "geom"
 
@@ -43,7 +44,7 @@ func init() {
 
 func CreateNodeTable(Src *DataSrc) error {
 	var query bytes.Buffer
-	if err := onlineTemplate.Execute(&query, Src);  err != nil {
+	if err := onlineTemplate.Execute(&query, Src); err != nil {
 		log.Fatalln(err)
 	}
 	var tblSQl = fmt.Sprintf(`DROP TABLE IF EXISTS %v CASCADE;`, Src.Table)

@@ -1,11 +1,11 @@
 package db
 
 import (
-	"log"
-	"fmt"
 	"bytes"
-	"encoding/gob"
 	"encoding/base64"
+	"encoding/gob"
+	"fmt"
+	"log"
 )
 
 // go binary encoder
@@ -36,4 +36,3 @@ func Deserialize(str string) *Node {
 	}
 	return n
 }
-
