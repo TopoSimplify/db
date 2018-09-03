@@ -25,7 +25,7 @@ type Node struct {
 }
 
 func NewDBNode(id *iter.Igen, coordinates geom.Coords, r rng.Rng, fid int, gfn func(geom.Coords) geom.Geometry) Node {
-	var n = NewDBNodeFromDPNode(node.CreateNode(id, coordinates, r, gfn))
+	var n = NewDBNodeFromDPNode(node.CreateNode(id, coordinates, r, gfn, nil))
 	n.FID = fid
 	return n
 }
