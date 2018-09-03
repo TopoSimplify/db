@@ -17,21 +17,21 @@ type Node struct {
 	polyline    pln.Polyline
 	Range       rng.Rng
 	geom        geom.Geometry
-
-	FID      int
-	NID      int
-	HullType geom.GeoType
-	WTK      string
+	FID         int
+	NID         int
+	HullType    geom.GeoType
+	WTK         string
 }
 
-func NewDBNode(id *iter.Igen, coordinates geom.Coords, r rng.Rng, fid int, gfn func(geom.Coords) geom.Geometry) Node {
+func NewDBNode(coordinates geom.Coords, r rng.Rng, fid int, gfn func(geom.Coords) geom.Geometry) *Node {
+	var id = iter.NewIgen()
 	var n = NewDBNodeFromDPNode(node.CreateNode(id, coordinates, r, gfn, nil))
 	n.FID = fid
 	return n
 }
 
-func NewDBNodeFromDPNode(node node.Node) Node {
-	return Node{
+func NewDBNodeFromDPNode(node node.Node) *Node {
+	return &Node{
 		Id:          node.Id,
 		Coordinates: node.Polyline.Coordinates,
 		Range:       node.Range,
@@ -95,15 +95,17 @@ func (n *Node) Last() *geom.Point {
 	return n.Coordinates.Pt(n.Coordinates.Len() - 1)
 }
 
-// subnode ids
-func (n *Node) SubNodeIds() (string, string) {
-	return fmt.Sprintf("%v/a", n.Id), fmt.Sprintf("%v/b", n.Id)
-}
+
 
 // as segment
 func (n *Node) Segment() *geom.Segment {
-	var i, j = 0, n.Coordinates.Len() - 1
+	var i, j = 0, n.Coordinates.Len()-1
 	return geom.NewSegment(n.Coordinates, i, j)
+}
+
+// segment points
+func (n *Node) SegmentPoints() (*geom.Point, *geom.Point) {
+	return n.First(), n.Last()
 }
 
 // hull segment as polyline
